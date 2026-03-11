@@ -1,0 +1,1 @@
+export type ActionType = 'ArrowUp' | 'ArrowDown' | 'Initialize'

@@ -1,0 +1,8 @@
+#game-canvas {
+    /* border:1px solid #FFFFFF; */
+}
+
+#canvas-container {
+    width: 640px;
+    height: 480px;
+}
