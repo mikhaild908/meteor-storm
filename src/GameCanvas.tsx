@@ -27,6 +27,13 @@ export function GameCanvas({backgroundImage, canvasWidth, canvasHeight, rocketIm
         new Meteor(meteorImage, meteorWidth, meteorHeight, meteorVelocity, 0, 0),
         new Meteor(meteorImage, meteorWidth, meteorHeight, meteorVelocity, 0, 0),
     ];
+
+    function checkCollision(rocket: Rocket, meteor: Meteor): boolean {
+        return rocket.x < meteor.x + meteor.width &&
+               rocket.x + rocket.width > meteor.x &&
+               rocket.y < meteor.y + meteor.height &&
+               rocket.y + rocket.height > meteor.y;
+    }
     
     useEffect(() => {
         if (canvasRef.current) {
@@ -47,9 +54,16 @@ export function GameCanvas({backgroundImage, canvasWidth, canvasHeight, rocketIm
             meteors.forEach(m => {
                 if (canvasRef.current) {
                     m.move(canvasRef.current, m.y, m.x);
-                    // TODO: check for hits
-                    // TODO; if hit - game over
-                    // TODO: reposition meteor to right screen if meteor position is less than or equal to (0 - meteor width)
+                    // Check for collision
+                    if (checkCollision(rocket, m)) {
+                        clearInterval(timerRef.current);
+                        alert("Game Over");
+                    }
+                    // Reposition meteor if off screen
+                    if (m.x <= -m.width) {
+                        m.x = canvasRef.current.width;
+                        m.y = Math.random() * (canvasRef.current.height - m.height);
+                    }
                     // TODO: add score if no hits
                 }
             });
