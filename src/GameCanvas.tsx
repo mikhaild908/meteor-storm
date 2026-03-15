@@ -3,7 +3,7 @@ import './GameOverLightBox.css';
 import { Meteor } from './Meteor';
 import { Rocket } from './Rocket';
 import { GameOverLightbox } from './GameOverLightbox';
-//import {ScoreBoard} from './ScoreBoard';
+import { ScoreBoard } from './ScoreBoard';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Props = {
@@ -44,6 +44,8 @@ export function GameCanvas({
 
     const rocketRef = useRef<Rocket | null>(null);
     const meteorsRef = useRef<Meteor[]>([]);
+    const scoreBoardRef = useRef<ScoreBoard>(null);
+    const scoreRef = useRef<number>(0);
 
     const setGameOverState = useCallback((value: boolean) => {
         gameOverRef.current = value;
@@ -92,6 +94,8 @@ export function GameCanvas({
         canvasRef.current.height = canvasHeight;
         canvasRef.current.focus();
 
+        scoreBoardRef.current = new ScoreBoard(0);
+
         const rocket = new Rocket(rocketImage, rocketWidth, rocketHeight, rocketVelocity);
         rocketRef.current = rocket;
         rocket.move(canvasRef.current, 'Initialize');
@@ -126,9 +130,13 @@ export function GameCanvas({
 
                     if (checkCollision(rocket, m)) {
                         setGameOverState(true);
+                        
                         if (timerRef.current) {
                             clearInterval(timerRef.current);
                         }
+
+                        scoreRef.current = 0;
+
                         return;
                     }
 
@@ -140,10 +148,12 @@ export function GameCanvas({
                         m.y = y;
                     }
 
-                    // TODO: add score if no hits
+                    // increase score
+                    scoreBoardRef.current?.updateScore(canvasRef.current, scoreRef.current++);
                 }
             });
         }, timerTick);
+
     }, [canvasHeight, canvasWidth, meteorHeight, meteorImage, meteorVelocity, meteorWidth, numberOfMeteors, rocketHeight, rocketImage, rocketVelocity, rocketWidth, setGameOverState, timerTick]);
 
     useEffect(() => {
@@ -171,7 +181,6 @@ export function GameCanvas({
 
     return (
         <div id='canvas-container' style={{backgroundImage: `url(${backgroundImage})`}}>
-            {/* <ScoreBoard score={0} /> */}
             <canvas id="game-canvas" ref={canvasRef} tabIndex={0} onKeyDown={handleKeyDown}/>
             {gameOver && <GameOverLightbox onRestart={handleRestart} />}
         </div>
