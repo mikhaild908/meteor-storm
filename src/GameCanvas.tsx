@@ -1,8 +1,9 @@
 import './GameCanvas.css';
 import { Meteor } from './Meteor';
 import { Rocket } from './Rocket';
+import { GameOverLightbox } from './GameOverLightbox';
 //import {ScoreBoard} from './ScoreBoard';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Props = {
     timerTick: number;
@@ -36,9 +37,17 @@ export function GameCanvas({
     numberOfMeteors,
 }: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const timerRef = useRef(0);
-    const meteors: Meteor[] = new Array<Meteor>(numberOfMeteors);
-    const rocket = new Rocket(rocketImage, rocketWidth, rocketHeight, rocketVelocity);
+    const timerRef = useRef<number | null>(null);
+    const gameOverRef = useRef(false);
+    const [gameOver, setGameOver] = useState(false);
+
+    const rocketRef = useRef<Rocket | null>(null);
+    const meteorsRef = useRef<Meteor[]>([]);
+
+    const setGameOverState = useCallback((value: boolean) => {
+        gameOverRef.current = value;
+        setGameOver(value);
+    }, []);
 
     function rectsOverlap(a: { x: number; y: number; width: number; height: number }, b: { x: number; y: number; width: number; height: number }) {
         return (
@@ -75,39 +84,56 @@ export function GameCanvas({
         return pos;
     }
     
-    useEffect(() => {
-        if (canvasRef.current) {
-            canvasRef.current.width = canvasWidth;
-            canvasRef.current.height  = canvasHeight;
-            canvasRef.current.focus();
+    const initGame = useCallback(() => {
+        if (!canvasRef.current) return;
 
-            rocket.move(canvasRef.current, 'Initialize');
+        canvasRef.current.width = canvasWidth;
+        canvasRef.current.height = canvasHeight;
+        canvasRef.current.focus();
 
-            for(let i = 0; i < meteors.length; i++) {
-                meteors[i] = new Meteor(meteorImage, meteorWidth, meteorHeight, meteorVelocity, 0, 0);
-            }
+        const rocket = new Rocket(rocketImage, rocketWidth, rocketHeight, rocketVelocity);
+        rocketRef.current = rocket;
+        rocket.move(canvasRef.current, 'Initialize');
 
-            meteors.forEach((m, idx) => {
-                if (canvasRef.current) {
-                    const { x, y } = randomMeteorPosition(meteors.slice(0, idx));
-                    m.move(canvasRef.current, y, x);
-                }
-            });
+        const meteors: Meteor[] = new Array<Meteor>(numberOfMeteors);
+        for (let i = 0; i < meteors.length; i++) {
+            meteors[i] = new Meteor(meteorImage, meteorWidth, meteorHeight, meteorVelocity, 0, 0);
         }
 
-        timerRef.current = setInterval(() => {
-            meteors.forEach(m => {
+        meteors.forEach((m, idx) => {
+            if (canvasRef.current) {
+                const { x, y } = randomMeteorPosition(meteors.slice(0, idx));
+                m.move(canvasRef.current, y, x);
+            }
+        });
+
+        meteorsRef.current = meteors;
+
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+        }
+
+        timerRef.current = window.setInterval(() => {
+            if (gameOverRef.current) return;
+
+            const rocket = rocketRef.current;
+            if (!rocket || !canvasRef.current) return;
+
+            meteorsRef.current.forEach(m => {
                 if (canvasRef.current) {
                     m.move(canvasRef.current, m.y, m.x);
-                    
+
                     if (checkCollision(rocket, m)) {
-                        clearInterval(timerRef.current);
-                        alert("Game Over"); // TODO: create a component for this
+                        setGameOverState(true);
+                        if (timerRef.current) {
+                            clearInterval(timerRef.current);
+                        }
+                        return;
                     }
 
                     // Reposition meteor if off screen
                     if (m.x <= -m.width) {
-                        const others = meteors.filter(o => o !== m);
+                        const others = meteorsRef.current.filter(o => o !== m);
                         const { y } = randomMeteorPosition(others, canvasRef.current.width);
                         m.x = canvasRef.current.width;
                         m.y = y;
@@ -117,27 +143,36 @@ export function GameCanvas({
                 }
             });
         }, timerTick);
+    }, [canvasHeight, canvasWidth, meteorHeight, meteorImage, meteorVelocity, meteorWidth, numberOfMeteors, rocketHeight, rocketImage, rocketVelocity, rocketWidth, setGameOverState, timerTick]);
 
-        // cleanup to prevent memory leaks
+    useEffect(() => {
+        initGame();
+
         return () => {
-            // this will run when the component unmounts
-            // console.log('Cleaning up timer');
-            clearInterval(timerRef?.current);
-        }
-    }, []);
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+        };
+    }, [initGame]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
         if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
             if(canvasRef.current) {
-                rocket.move(canvasRef.current, e.key);
+                rocketRef.current?.move(canvasRef.current, e.key);
             }
         }
+    };
+
+    const handleRestart = () => {
+        setGameOverState(false);
+        initGame();
     };
 
     return (
         <div id='canvas-container' style={{backgroundImage: `url(${backgroundImage})`}}>
             {/* <ScoreBoard score={0} /> */}
             <canvas id="game-canvas" ref={canvasRef} tabIndex={0} onKeyDown={handleKeyDown}/>
+            {gameOver && <GameOverLightbox onRestart={handleRestart} />}
         </div>
     );
 }
