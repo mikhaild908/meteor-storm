@@ -41,7 +41,7 @@ export function GameCanvas({
     const rocket = new Rocket(rocketImage, rocketWidth, rocketHeight, rocketVelocity);
 
     function checkCollision(rocket: Rocket, meteor: Meteor): boolean {
-        return rocket.x + rocket.width >= meteor.x  + 25 && // TODO: 25???
+        return rocket.x + rocket.width >= meteor.x &&
                rocket.y + rocket.height > meteor.y &&
                rocket.y < meteor.y + meteor.width;
     }
@@ -69,6 +69,7 @@ export function GameCanvas({
             meteors.forEach(m => {
                 if (canvasRef.current) {
                     m.move(canvasRef.current, m.y, m.x);
+                    
                     if (checkCollision(rocket, m)) {
                         clearInterval(timerRef.current);
                         alert("Game Over"); // TODO: create a component for this
