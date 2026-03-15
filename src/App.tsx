@@ -12,11 +12,14 @@ function App() {
   const ROCKET_VELOCITY = 10;
   const METEOR_WIDTH = 80;
   const METEOR_HEIGHT = 80;
-  const METEOR_VELOCITY = 10;
+  const METEOR_VELOCITY = 5;
+  const TIMER_TICK = 25;
+  const NUMBER_OF_METEORS = 3;
 
   return (
     <>
       <GameCanvas
+        timerTick={TIMER_TICK}
         backgroundImage={STARS}
         rocketImage={ROCKET}
         canvasHeight={CANVAS_HEIGHT}
@@ -27,7 +30,8 @@ function App() {
         meteorImage={METEOR}
         meteorWidth = {METEOR_WIDTH}
         meteorHeight = {METEOR_HEIGHT}
-        meteorVelocity = {METEOR_VELOCITY}  />
+        meteorVelocity = {METEOR_VELOCITY} 
+        numberOfMeteors = {NUMBER_OF_METEORS} />
     </>
   );
 }

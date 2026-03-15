@@ -5,6 +5,7 @@ import { Rocket } from './Rocket';
 import { useEffect, useRef } from 'react';
 
 type Props = {
+    timerTick: number;
     backgroundImage: string;
     canvasWidth: number;
     canvasHeight: number;
@@ -16,23 +17,33 @@ type Props = {
     meteorWidth: number;
     meteorHeight: number;
     meteorVelocity: number;
+    numberOfMeteors: number;
 }
 
-export function GameCanvas({backgroundImage, canvasWidth, canvasHeight, rocketImage, rocketWidth, rocketHeight, rocketVelocity, meteorImage, meteorWidth, meteorHeight, meteorVelocity }: Props) {
+export function GameCanvas({
+    timerTick,
+    backgroundImage,
+    canvasWidth,
+    canvasHeight,
+    rocketImage,
+    rocketWidth,
+    rocketHeight,
+    rocketVelocity,
+    meteorImage,
+    meteorWidth,
+    meteorHeight,
+    meteorVelocity,
+    numberOfMeteors,
+}: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const timerRef = useRef(0);
+    const meteors: Meteor[] = new Array<Meteor>(numberOfMeteors);
     const rocket = new Rocket(rocketImage, rocketWidth, rocketHeight, rocketVelocity);
-    const meteors: Meteor[] = [
-        new Meteor(meteorImage, meteorWidth, meteorHeight, meteorVelocity, 0, 0),
-        new Meteor(meteorImage, meteorWidth, meteorHeight, meteorVelocity, 0, 0),
-        new Meteor(meteorImage, meteorWidth, meteorHeight, meteorVelocity, 0, 0),
-    ];
 
     function checkCollision(rocket: Rocket, meteor: Meteor): boolean {
-        return rocket.x < meteor.x + meteor.width &&
-               rocket.x + rocket.width > meteor.x &&
-               rocket.y < meteor.y + meteor.height &&
-               rocket.y + rocket.height > meteor.y;
+        return rocket.x + rocket.width >= meteor.x  + 25 && // TODO: 25???
+               rocket.y + rocket.height > meteor.y &&
+               rocket.y < meteor.y + meteor.width;
     }
     
     useEffect(() => {
@@ -42,6 +53,10 @@ export function GameCanvas({backgroundImage, canvasWidth, canvasHeight, rocketIm
             canvasRef.current.focus();
 
             rocket.move(canvasRef.current, 'Initialize');
+
+            for(let i = 0; i < meteors.length; i++) {
+                meteors[i] = new Meteor(meteorImage, meteorWidth, meteorHeight, meteorVelocity, 0, 0);
+            }
 
             meteors.forEach(m => {
                 if (canvasRef.current) {
@@ -54,20 +69,21 @@ export function GameCanvas({backgroundImage, canvasWidth, canvasHeight, rocketIm
             meteors.forEach(m => {
                 if (canvasRef.current) {
                     m.move(canvasRef.current, m.y, m.x);
-                    // Check for collision
                     if (checkCollision(rocket, m)) {
                         clearInterval(timerRef.current);
-                        alert("Game Over");
+                        alert("Game Over"); // TODO: create a component for this
                     }
+
                     // Reposition meteor if off screen
                     if (m.x <= -m.width) {
                         m.x = canvasRef.current.width;
                         m.y = Math.random() * (canvasRef.current.height - m.height);
                     }
+
                     // TODO: add score if no hits
                 }
             });
-        }, 500);
+        }, timerTick);
 
         // cleanup to prevent memory leaks
         return () => {

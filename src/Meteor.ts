@@ -19,17 +19,17 @@ export class Meteor {
     }
 
     move(canvas: HTMLCanvasElement, currentY: number, currentX: number) {
-            if(canvas) {
-                const canvasContext = canvas.getContext('2d');
-                const previousY = currentY;
-                const previousX = currentX;
+        if(canvas) {
+            const canvasContext = canvas.getContext('2d');
+            const previousY = currentY;
+            const previousX = currentX;
 
-                canvasContext?.clearRect(previousX, previousY, this.width, this.height);
+            canvasContext?.clearRect(previousX, previousY, this.width, this.height);
 
-                this.x = currentX - this.velocity;
-                this.y = currentY;
-                
-                canvasContext?.drawImage(this.image, this.x, this.y, this.width, this.height);
-            }
+            this.x = currentX - this.velocity;
+            this.y = currentY;
+            
+            canvasContext?.drawImage(this.image, this.x, this.y, this.width, this.height);
         }
+    }
 }
