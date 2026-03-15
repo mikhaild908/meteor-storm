@@ -40,10 +40,39 @@ export function GameCanvas({
     const meteors: Meteor[] = new Array<Meteor>(numberOfMeteors);
     const rocket = new Rocket(rocketImage, rocketWidth, rocketHeight, rocketVelocity);
 
+    function rectsOverlap(a: { x: number; y: number; width: number; height: number }, b: { x: number; y: number; width: number; height: number }) {
+        return (
+            a.x < b.x + b.width &&
+            a.x + a.width > b.x &&
+            a.y < b.y + b.height &&
+            a.y + a.height > b.y
+        );
+    }
+
     function checkCollision(rocket: Rocket, meteor: Meteor): boolean {
-        return rocket.x + rocket.width >= meteor.x &&
-               rocket.y + rocket.height > meteor.y &&
-               rocket.y < meteor.y + meteor.width;
+        return rectsOverlap(rocket, meteor);
+    }
+
+    function randomMeteorPosition(existing: Meteor[], fixedX?: number) {
+        const maxY = Math.max(0, canvasHeight - meteorHeight);
+
+        const candidate = () => ({
+            x: fixedX !== undefined ? fixedX : Math.random() * Math.max(0, canvasWidth - meteorWidth),
+            y: Math.random() * maxY,
+        });
+
+        const MAX_TRIES = 20;
+        let pos = candidate();
+        for (let i = 0; i < MAX_TRIES; i++) {
+            const rect = { ...pos, width: meteorWidth, height: meteorHeight };
+            const overlaps = existing.some(m => rectsOverlap(rect, m));
+            if (!overlaps) {
+                return pos;
+            }
+            pos = candidate();
+        }
+
+        return pos;
     }
     
     useEffect(() => {
@@ -58,9 +87,10 @@ export function GameCanvas({
                 meteors[i] = new Meteor(meteorImage, meteorWidth, meteorHeight, meteorVelocity, 0, 0);
             }
 
-            meteors.forEach(m => {
+            meteors.forEach((m, idx) => {
                 if (canvasRef.current) {
-                    m.move(canvasRef.current, Math.random() * (canvasHeight), Math.random() * (canvasWidth));
+                    const { x, y } = randomMeteorPosition(meteors.slice(0, idx));
+                    m.move(canvasRef.current, y, x);
                 }
             });
         }
@@ -77,8 +107,10 @@ export function GameCanvas({
 
                     // Reposition meteor if off screen
                     if (m.x <= -m.width) {
+                        const others = meteors.filter(o => o !== m);
+                        const { y } = randomMeteorPosition(others, canvasRef.current.width);
                         m.x = canvasRef.current.width;
-                        m.y = Math.random() * (canvasRef.current.height - m.height);
+                        m.y = y;
                     }
 
                     // TODO: add score if no hits
