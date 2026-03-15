@@ -1,4 +1,5 @@
 import './GameCanvas.css';
+import './GameOverLightBox.css';
 import { Meteor } from './Meteor';
 import { Rocket } from './Rocket';
 import { GameOverLightbox } from './GameOverLightbox';
