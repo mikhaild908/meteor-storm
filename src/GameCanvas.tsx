@@ -39,7 +39,8 @@ export function GameCanvas({
 }: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
-    const timerRef = useRef<number | null>(null);
+    const rafRef = useRef<number | null>(null);
+    const lastTickRef = useRef<number>(0);
     const gameOverRef = useRef(false);
     const [gameOver, setGameOver] = useState(false);
 
@@ -117,44 +118,53 @@ export function GameCanvas({
 
         meteorsRef.current = meteors;
 
-        if (timerRef.current) {
-            clearInterval(timerRef.current);
+        if (rafRef.current) {
+            cancelAnimationFrame(rafRef.current);
         }
+        lastTickRef.current = 0;
 
-        timerRef.current = window.setInterval(() => {
+        const loop = (timestamp: number) => {
             if (gameOverRef.current) return;
 
-            const rocket = rocketRef.current;
-            const ctx = ctxRef.current;
-            if (!rocket || !ctx) return;
+            if (timestamp - lastTickRef.current >= timerTick) {
+                lastTickRef.current = timestamp;
 
-            meteorsRef.current.forEach(m => {
-                m.move(ctx, m.y, m.x);
+                const rocket = rocketRef.current;
+                const ctx = ctxRef.current;
+                if (!rocket || !ctx) return;
 
-                if (checkCollision(rocket, m)) {
-                    setGameOverState(true);
+                meteorsRef.current.forEach(m => {
+                    m.move(ctx, m.y, m.x);
 
-                    if (timerRef.current) {
-                        clearInterval(timerRef.current);
+                    if (checkCollision(rocket, m)) {
+                        setGameOverState(true);
+
+                        if (rafRef.current) {
+                            cancelAnimationFrame(rafRef.current);
+                        }
+
+                        scoreRef.current = 0;
+
+                        return;
                     }
 
-                    scoreRef.current = 0;
+                    // Reposition meteor if off screen
+                    if (m.x <= -m.width) {
+                        const others = meteorsRef.current.filter(o => o !== m);
+                        const { y } = randomMeteorPosition(others, ctx.canvas.width);
+                        m.x = ctx.canvas.width;
+                        m.y = y;
+                    }
 
-                    return;
-                }
+                    // increase score
+                    scoreBoardRef.current?.updateScore(ctx, scoreRef.current++);
+                });
+            }
 
-                // Reposition meteor if off screen
-                if (m.x <= -m.width) {
-                    const others = meteorsRef.current.filter(o => o !== m);
-                    const { y } = randomMeteorPosition(others, ctx.canvas.width);
-                    m.x = ctx.canvas.width;
-                    m.y = y;
-                }
+            rafRef.current = requestAnimationFrame(loop);
+        };
 
-                // increase score
-                scoreBoardRef.current?.updateScore(ctx, scoreRef.current++);
-            });
-        }, timerTick);
+        rafRef.current = requestAnimationFrame(loop);
 
     }, [canvasHeight, canvasWidth, meteorHeight, meteorImage, meteorVelocity, meteorWidth, numberOfMeteors, rocketHeight, rocketImage, rocketVelocity, rocketWidth, setGameOverState, timerTick]);
 
@@ -162,8 +172,8 @@ export function GameCanvas({
         initGame();
 
         return () => {
-            if (timerRef.current) {
-                clearInterval(timerRef.current);
+            if (rafRef.current) {
+                cancelAnimationFrame(rafRef.current);
             }
         };
     }, [initGame]);
