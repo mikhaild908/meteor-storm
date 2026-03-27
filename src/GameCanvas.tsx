@@ -48,6 +48,7 @@ export function GameCanvas({
     const meteorsRef = useRef<Meteor[]>([]);
     const scoreBoardRef = useRef<ScoreBoard>(null);
     const scoreRef = useRef<number>(0);
+    const finalScoreRef = useRef<number>(0);
     const gameGenRef = useRef<number>(0);
 
     const setGameOverState = useCallback((value: boolean) => {
@@ -150,6 +151,7 @@ export function GameCanvas({
 
                     if (checkCollision(rocket, m)) {
                         setGameOverState(true);
+                        finalScoreRef.current = scoreRef.current;
 
                         if (rafRef.current) {
                             cancelAnimationFrame(rafRef.current);
@@ -206,7 +208,7 @@ export function GameCanvas({
     return (
         <div id='canvas-container' style={{backgroundImage: `url(${backgroundImage})`}}>
             <canvas id="game-canvas" ref={canvasRef} tabIndex={0} onKeyDown={handleKeyDown}/>
-            {gameOver && <GameOverLightbox onRestart={handleRestart} />}
+            {gameOver && <GameOverLightbox onRestart={handleRestart} finalScore={finalScoreRef.current} />}
         </div>
     );
 }
