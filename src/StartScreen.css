@@ -1,0 +1,71 @@
+.start-screen-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.80);
+    color: #ffffff;
+    padding: 1rem;
+}
+
+.start-screen-content {
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    text-align: center;
+    max-width: 320px;
+    width: 100%;
+}
+
+.start-screen-content h2 {
+    margin-top: 0;
+    font-size: 1.6rem;
+    color: #ffd700;
+}
+
+.start-screen-content p {
+    margin: 0.4rem 0;
+    font-size: 0.95rem;
+    color: #ccc;
+}
+
+.start-screen-controls {
+    margin: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.start-screen-controls .control-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.9rem;
+}
+
+.start-screen-controls kbd {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 4px;
+    padding: 0.15rem 0.5rem;
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+.start-screen-content button {
+    margin-top: 1.2rem;
+    padding: 0.6rem 1.4rem;
+    border: none;
+    border-radius: 6px;
+    background: #1e90ff;
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.start-screen-content button:hover {
+    background: #56a0ff;
+}

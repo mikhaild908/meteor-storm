@@ -3,6 +3,7 @@ import './GameOverLightBox.css';
 import { Meteor } from './Meteor';
 import { Rocket } from './Rocket';
 import { GameOverLightbox } from './GameOverLightbox';
+import { StartScreen } from './StartScreen';
 import { ScoreBoard } from './ScoreBoard';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -43,6 +44,7 @@ export function GameCanvas({
     const lastTickRef = useRef<number>(0);
     const gameOverRef = useRef(false);
     const [gameOver, setGameOver] = useState(false);
+    const [gameStarted, setGameStarted] = useState(false);
 
     const rocketRef = useRef<Rocket | null>(null);
     const meteorsRef = useRef<Meteor[]>([]);
@@ -50,6 +52,7 @@ export function GameCanvas({
     const scoreRef = useRef<number>(0);
     const finalScoreRef = useRef<number>(0);
     const gameGenRef = useRef<number>(0);
+    const pressedKeysRef = useRef<{ ArrowUp: boolean; ArrowDown: boolean }>({ ArrowUp: false, ArrowDown: false });
 
     const setGameOverState = useCallback((value: boolean) => {
         gameOverRef.current = value;
@@ -146,6 +149,9 @@ export function GameCanvas({
                 const ctx = ctxRef.current;
                 if (!rocket || !ctx) return;
 
+                if (pressedKeysRef.current.ArrowUp) rocket.move(ctx, 'ArrowUp');
+                if (pressedKeysRef.current.ArrowDown) rocket.move(ctx, 'ArrowDown');
+
                 meteorsRef.current.forEach(m => {
                     m.move(ctx, m.y, m.x);
 
@@ -183,6 +189,8 @@ export function GameCanvas({
     }, [canvasHeight, canvasWidth, meteorHeight, meteorImage, meteorVelocity, meteorWidth, numberOfMeteors, rocketHeight, rocketImage, rocketVelocity, rocketWidth, setGameOverState, timerTick]);
 
     useEffect(() => {
+        if (!gameStarted) return;
+
         initGame();
 
         return () => {
@@ -190,14 +198,20 @@ export function GameCanvas({
                 cancelAnimationFrame(rafRef.current);
             }
         };
-    }, [initGame]);
+    }, [initGame, gameStarted]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
-        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-            if (ctxRef.current) {
-                rocketRef.current?.move(ctxRef.current, e.key);
-            }
-        }
+        if (e.key === 'ArrowUp') pressedKeysRef.current.ArrowUp = true;
+        if (e.key === 'ArrowDown') pressedKeysRef.current.ArrowDown = true;
+    };
+
+    const handleKeyUp = (e: React.KeyboardEvent<HTMLElement>) => {
+        if (e.key === 'ArrowUp') pressedKeysRef.current.ArrowUp = false;
+        if (e.key === 'ArrowDown') pressedKeysRef.current.ArrowDown = false;
+    };
+
+    const handleStart = () => {
+        setGameStarted(true);
     };
 
     const handleRestart = () => {
@@ -207,7 +221,8 @@ export function GameCanvas({
 
     return (
         <div id='canvas-container' style={{backgroundImage: `url(${backgroundImage})`}}>
-            <canvas id="game-canvas" ref={canvasRef} tabIndex={0} onKeyDown={handleKeyDown}/>
+            <canvas id="game-canvas" ref={canvasRef} tabIndex={0} onKeyDown={handleKeyDown} onKeyUp={handleKeyUp}/>
+            {!gameStarted && <StartScreen onStart={handleStart} />}
             {gameOver && <GameOverLightbox onRestart={handleRestart} finalScore={finalScoreRef.current} />}
         </div>
     );
