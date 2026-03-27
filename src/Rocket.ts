@@ -20,31 +20,26 @@ export class Rocket {
         this.image.src = url;
     }
 
-    move(canvas: HTMLCanvasElement, action: ActionType) {
-        if(canvas) {
-            const canvasContext = canvas.getContext('2d');
-            const previousY =  this.y; //currentY;
-            
-            if(action === 'ArrowUp') {
-                this.y -= this.velocity; 
+    move(ctx: CanvasRenderingContext2D, action: ActionType) {
+        const previousY = this.y;
 
-                if (this.y <= 0 - this.height) {
-                    this.y = canvas.height - this.height;
-                }
-            }
-            else if (action === 'ArrowDown') {
-                this.y += this.velocity;
+        if (action === 'ArrowUp') {
+            this.y -= this.velocity;
 
-                if (this.y >= canvas.height) {
-                    this.y = 0;
-                }
+            if (this.y <= 0 - this.height) {
+                this.y = ctx.canvas.height - this.height;
             }
-            else if (action === 'Initialize') {
+        } else if (action === 'ArrowDown') {
+            this.y += this.velocity;
+
+            if (this.y >= ctx.canvas.height) {
                 this.y = 0;
             }
-
-            canvasContext?.clearRect(0, previousY, this.width, this.height);
-            canvasContext?.drawImage(this.image, 0, this.y, this.width, this.height);
+        } else if (action === 'Initialize') {
+            this.y = 0;
         }
+
+        ctx.clearRect(0, previousY, this.width, this.height);
+        ctx.drawImage(this.image, 0, this.y, this.width, this.height);
     }
 }

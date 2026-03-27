@@ -38,6 +38,7 @@ export function GameCanvas({
     numberOfMeteors,
 }: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
     const timerRef = useRef<number | null>(null);
     const gameOverRef = useRef(false);
     const [gameOver, setGameOver] = useState(false);
@@ -94,11 +95,15 @@ export function GameCanvas({
         canvasRef.current.height = canvasHeight;
         canvasRef.current.focus();
 
+        ctxRef.current = canvasRef.current.getContext('2d');
+        if (!ctxRef.current) return;
+        const ctx = ctxRef.current;
+
         scoreBoardRef.current = new ScoreBoard(0);
 
         const rocket = new Rocket(rocketImage, rocketWidth, rocketHeight, rocketVelocity);
         rocketRef.current = rocket;
-        rocket.move(canvasRef.current, 'Initialize');
+        rocket.move(ctx, 'Initialize');
 
         const meteors: Meteor[] = new Array<Meteor>(numberOfMeteors);
         for (let i = 0; i < meteors.length; i++) {
@@ -106,10 +111,8 @@ export function GameCanvas({
         }
 
         meteors.forEach((m, idx) => {
-            if (canvasRef.current) {
-                const { x, y } = randomMeteorPosition(meteors.slice(0, idx));
-                m.move(canvasRef.current, y, x);
-            }
+            const { x, y } = randomMeteorPosition(meteors.slice(0, idx));
+            m.move(ctx, y, x);
         });
 
         meteorsRef.current = meteors;
@@ -122,35 +125,34 @@ export function GameCanvas({
             if (gameOverRef.current) return;
 
             const rocket = rocketRef.current;
-            if (!rocket || !canvasRef.current) return;
+            const ctx = ctxRef.current;
+            if (!rocket || !ctx) return;
 
             meteorsRef.current.forEach(m => {
-                if (canvasRef.current) {
-                    m.move(canvasRef.current, m.y, m.x);
+                m.move(ctx, m.y, m.x);
 
-                    if (checkCollision(rocket, m)) {
-                        setGameOverState(true);
-                        
-                        if (timerRef.current) {
-                            clearInterval(timerRef.current);
-                        }
+                if (checkCollision(rocket, m)) {
+                    setGameOverState(true);
 
-                        scoreRef.current = 0;
-
-                        return;
+                    if (timerRef.current) {
+                        clearInterval(timerRef.current);
                     }
 
-                    // Reposition meteor if off screen
-                    if (m.x <= -m.width) {
-                        const others = meteorsRef.current.filter(o => o !== m);
-                        const { y } = randomMeteorPosition(others, canvasRef.current.width);
-                        m.x = canvasRef.current.width;
-                        m.y = y;
-                    }
+                    scoreRef.current = 0;
 
-                    // increase score
-                    scoreBoardRef.current?.updateScore(canvasRef.current, scoreRef.current++);
+                    return;
                 }
+
+                // Reposition meteor if off screen
+                if (m.x <= -m.width) {
+                    const others = meteorsRef.current.filter(o => o !== m);
+                    const { y } = randomMeteorPosition(others, ctx.canvas.width);
+                    m.x = ctx.canvas.width;
+                    m.y = y;
+                }
+
+                // increase score
+                scoreBoardRef.current?.updateScore(ctx, scoreRef.current++);
             });
         }, timerTick);
 
@@ -168,8 +170,8 @@ export function GameCanvas({
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
         if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-            if(canvasRef.current) {
-                rocketRef.current?.move(canvasRef.current, e.key);
+            if (ctxRef.current) {
+                rocketRef.current?.move(ctxRef.current, e.key);
             }
         }
     };

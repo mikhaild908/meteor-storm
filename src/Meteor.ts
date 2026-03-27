@@ -18,18 +18,12 @@ export class Meteor {
         this.x = x;
     }
 
-    move(canvas: HTMLCanvasElement, currentY: number, currentX: number) {
-        if(canvas) {
-            const canvasContext = canvas.getContext('2d');
-            const previousY = currentY;
-            const previousX = currentX;
+    move(ctx: CanvasRenderingContext2D, currentY: number, currentX: number) {
+        ctx.clearRect(currentX, currentY, this.width, this.height);
 
-            canvasContext?.clearRect(previousX, previousY, this.width, this.height);
+        this.x = currentX - this.velocity;
+        this.y = currentY;
 
-            this.x = currentX - this.velocity;
-            this.y = currentY;
-            
-            canvasContext?.drawImage(this.image, this.x, this.y, this.width, this.height);
-        }
+        ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
     }
 }
