@@ -48,6 +48,7 @@ export function GameCanvas({
     const meteorsRef = useRef<Meteor[]>([]);
     const scoreBoardRef = useRef<ScoreBoard>(null);
     const scoreRef = useRef<number>(0);
+    const gameGenRef = useRef<number>(0);
 
     const setGameOverState = useCallback((value: boolean) => {
         gameOverRef.current = value;
@@ -89,8 +90,10 @@ export function GameCanvas({
         return pos;
     }
     
-    const initGame = useCallback(() => {
+    const initGame = useCallback(async () => {
         if (!canvasRef.current) return;
+
+        const generation = ++gameGenRef.current;
 
         canvasRef.current.width = canvasWidth;
         canvasRef.current.height = canvasHeight;
@@ -103,13 +106,22 @@ export function GameCanvas({
         scoreBoardRef.current = new ScoreBoard(0);
 
         const rocket = new Rocket(rocketImage, rocketWidth, rocketHeight, rocketVelocity);
-        rocketRef.current = rocket;
-        rocket.move(ctx, 'Initialize');
-
         const meteors: Meteor[] = new Array<Meteor>(numberOfMeteors);
         for (let i = 0; i < meteors.length; i++) {
             meteors[i] = new Meteor(meteorImage, meteorWidth, meteorHeight, meteorVelocity, 0, 0);
         }
+
+        try {
+            await Promise.all([rocket.loaded, ...meteors.map(m => m.loaded)]);
+        } catch {
+            return;
+        }
+
+        // A newer initGame call was made while images were loading — abort.
+        if (gameGenRef.current !== generation) return;
+
+        rocketRef.current = rocket;
+        rocket.move(ctx, 'Initialize');
 
         meteors.forEach((m, idx) => {
             const { x, y } = randomMeteorPosition(meteors.slice(0, idx));

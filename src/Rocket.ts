@@ -2,6 +2,7 @@ import type { ActionType } from "./ActionType";
 
 export class Rocket {
     image: HTMLImageElement;
+    loaded: Promise<void>;
     url: string;
     width: number;
     height: number;
@@ -16,7 +17,11 @@ export class Rocket {
         this.velocity = velocity;
         this.x = 0;
         this.y = 0;
-        this.image = new Image(width = width, height = height);
+        this.image = new Image();
+        this.loaded = new Promise((resolve, reject) => {
+            this.image.onload = () => resolve();
+            this.image.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+        });
         this.image.src = url;
     }
 

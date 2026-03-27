@@ -1,5 +1,6 @@
 export class Meteor {
     image: HTMLImageElement;
+    loaded: Promise<void>;
     url: string;
     width: number;
     height: number;
@@ -12,7 +13,11 @@ export class Meteor {
         this.width = width;
         this.height = height;
         this.velocity = velocity;
-        this.image = new Image(width = width, height = height);
+        this.image = new Image();
+        this.loaded = new Promise((resolve, reject) => {
+            this.image.onload = () => resolve();
+            this.image.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+        });
         this.image.src = url;
         this.y = y;
         this.x = x;
